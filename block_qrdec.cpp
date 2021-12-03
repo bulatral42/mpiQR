@@ -58,8 +58,10 @@ int main(int argc, char *argv[]) {
 
     int n_block_cols = N / (n_proc * block_size), n_block_rows = N / block_size; // per proc
 
-    std::cout << "N = " << N << ", k = " << block_size << ", m = " << subblock_size;
-    std::cout << ", nbc = " << n_block_cols << ", nbr = " << n_block_rows << std::endl;
+    if (proc_id == 0) {
+        std::cout << "N = " << N << ", k = " << block_size << ", m = " << subblock_size;
+        std::cout << ", nbc = " << n_block_cols << ", nbr = " << n_block_rows << std::endl;
+    }
     // blocks are stored rowwise, every block inside is stored columnwise
     double *blocks = new double[n_block_rows * n_block_cols * block_size * block_size];
 
@@ -70,10 +72,13 @@ int main(int argc, char *argv[]) {
         blocks[i] = -1.0 + 2 * static_cast<double>(std::rand()) / RAND_MAX;
     }
 
+    // Main algorithm start
+    t_start = MPI_Wtime();
+
     int proc_rots_cnt = (n_block_rows - proc_id) * n_block_cols - n_proc * ((n_block_cols - 1) * n_block_cols) / 2;
     proc_rots_cnt *= block_size * block_size;
     proc_rots_cnt -= n_block_cols * (block_size * (block_size + 1)) / 2;
-    std::cout << "id = " << proc_id << ": rots_cnt = " << proc_rots_cnt << std::endl;
+    //std::cout << "id = " << proc_id << ": rots_cnt = " << proc_rots_cnt << std::endl;
     double *my_rotations = new double[2 * proc_rots_cnt];
     double *out_rotations = new double[2 * block_size * block_size];
     double *cur_rots = my_rotations;
@@ -93,12 +98,9 @@ int main(int argc, char *argv[]) {
                         double r{0.0};
                         dlartg(main_block[j * block_size + j], cur_block[j * block_size + i],
                                cur_rots[2 * n_rots], cur_rots[2 * n_rots + 1], r);
-                        drot(block_size - (j + 1), main_block + (j + 1) * block_size + j, block_size, 
-                                cur_block + (j + 1) * block_size + i, block_size, 
-                                cur_rots[2 * n_rots], cur_rots[2 * n_rots + 1]);
-                        //std::cout << "j = " << j << ", i = " << i;
-                        //std::cout << "c = " << cur_rots[2 * n_rots] << ", s = " << cur_rots[2 * n_rots + 1] << std::endl;
-
+                        drot(block_size - j - 1, main_block + (j + 1) * block_size + j, block_size, 
+                             cur_block + (j + 1) * block_size + i, block_size, 
+                             cur_rots[2 * n_rots], cur_rots[2 * n_rots + 1]);
                         main_block[j * block_size + j] = r;
                         cur_block[j * block_size + i] = 0.0;
                         ++n_rots;
@@ -115,7 +117,6 @@ int main(int argc, char *argv[]) {
             MPI_Request req_bcast;
             double *senrecv_rots = proc_id == sender_id ? cur_rots : out_rotations;
             MPI_Ibcast(senrecv_rots, 2 * n_rots, MPI_DOUBLE, sender_id, comm, &req_bcast);
-            //MPI_Bcast(senrecv_rots, 2 * n_rots, MPI_DOUBLE, sender_id, comm);
                 
             // Perform rotations to other blocks in row
             double *up_other_blocks = main_block;
@@ -129,8 +130,7 @@ int main(int argc, char *argv[]) {
                 MPI_Status status;
                 MPI_Wait(&req_bcast, &status);
             }
-    
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
             for (int subbl_id = 0; subbl_id < n_subblocks; ++subbl_id) {
                 double *up_subblock = up_other_blocks + block_size * subblock_size * subbl_id;
                 double *dn_subblock = dn_other_blocks + block_size * subblock_size * subbl_id;
@@ -153,7 +153,12 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-
+    MPI_Barrier(comm);
+    t_end = MPI_Wtime();
+    mpi_qr_time = t_end - t_start;
+    if (proc_id == 0) {
+        std::cout << "MPI QR time = " << mpi_qr_time << " sec" << std::endl;
+    }
     //std::cout << "id = " << proc_id << ", blocks = \n";
     //print_matrix(block_size, n_block_cols * n_block_rows * block_size, blocks);
     delete[] my_rotations;
