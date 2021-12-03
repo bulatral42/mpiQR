@@ -1,10 +1,11 @@
 #include <mpi.h>
 #include <iostream>
-//#include <mkl.h>
 #include <cmath>
 #include <random>
 #include "BLAS.h"
 #include "LAPACK.h"
+
+#include <unistd.h>
 
 
 double get_elem_A(size_t i, size_t j) {
@@ -17,10 +18,10 @@ double get_elem_B(size_t i, size_t j) {
 double get_elem_C(size_t i, size_t j) {
     return 100 - std::abs((int)i - 9) - std::abs((int)j - 6);
 }
-void print_matrix(int N, double *A) {
-    for (int i = 0; i < N; ++i) {
+void print_matrix(int M, int N, double *A) {
+    for (int i = 0; i < M; ++i) {
         for (int j = 0; j < N; ++j) {
-            std::cout << A[i + N * j] << " ";
+            std::cout << A[i + M * j] << " ";
         }
         std::cout << std::endl;
     }
@@ -65,47 +66,57 @@ int main(int argc, char *argv[]) {
     // TODO: fill matrix
     std::srand(proc_id);
     for (int i = 0; i < n_block_rows * n_block_cols * block_size * block_size; ++i) {
+        //blocks[i] = i + proc_id * n_block_rows * n_block_cols * block_size * block_size;
         blocks[i] = -1.0 + 2 * static_cast<double>(std::rand()) / RAND_MAX;
     }
-    std::cout << "id = " << proc_id << " :: initialized matrix" << std::endl;
 
     int proc_rots_cnt = (n_block_rows - proc_id) * n_block_cols - n_proc * ((n_block_cols - 1) * n_block_cols) / 2;
     proc_rots_cnt *= block_size * block_size;
     proc_rots_cnt -= n_block_cols * (block_size * (block_size + 1)) / 2;
-    std::cout << "rots_cnt = " << proc_rots_cnt << std::endl;
-    double *full_rotations = new double[2 * proc_rots_cnt];
-    double *rotations = full_rotations;
+    std::cout << "id = " << proc_id << ": rots_cnt = " << proc_rots_cnt << std::endl;
+    double *my_rotations = new double[2 * proc_rots_cnt];
+    double *out_rotations = new double[2 * block_size * block_size];
+    double *cur_rots = my_rotations;
 
-    int nnz = 0;
     // Main cycle
     for (int b_col = 0; b_col < n_block_cols * n_proc; ++b_col) {
-        double *main_block = blocks + (block_size * block_size) * (n_block_cols * b_col + b_col);
         int sender_id = b_col % n_proc;
+        int local_b_col = b_col / n_proc;
+        double *main_block = blocks + (block_size * block_size) * (b_col * n_block_cols + local_b_col);
         for (int b_row = b_col; b_row < n_block_rows; ++b_row) {
-            double *cur_block =  blocks + (block_size * block_size) * (n_block_cols * b_row + b_col);
+            double *cur_block = blocks + (block_size * block_size) * (b_row * n_block_cols + local_b_col);
             int n_rots{0};
             bool triang_zero = b_row == b_col; // Zerorize triangular part or full block
-            if (proc_id == 0) {
-                std::cout << "id = " << proc_id << " :: before calc rots, bc = " << b_col << ", br = " << b_row << std::endl;
-            }
             if (proc_id == sender_id) { // Sender part
                 for (int j = 0; j < block_size; ++j) {
                     for (int i = triang_zero ? j + 1 : 0; i < block_size; ++i) {
                         double r{0.0};
                         dlartg(main_block[j * block_size + j], cur_block[j * block_size + i],
-                               rotations[2 * n_rots], rotations[2 * n_rots + 1], r);
-                        //std::cout << "j = " << j << ", i = " << i << ", dlartg done" << std::endl;
+                               cur_rots[2 * n_rots], cur_rots[2 * n_rots + 1], r);
+                        drot(block_size - (j + 1), main_block + (j + 1) * block_size + j, block_size, 
+                                cur_block + (j + 1) * block_size + i, block_size, 
+                                cur_rots[2 * n_rots], cur_rots[2 * n_rots + 1]);
+                        //std::cout << "j = " << j << ", i = " << i;
+                        //std::cout << "c = " << cur_rots[2 * n_rots] << ", s = " << cur_rots[2 * n_rots + 1] << std::endl;
+
                         main_block[j * block_size + j] = r;
                         cur_block[j * block_size + i] = 0.0;
-                        ++nnz;
                         ++n_rots;
                     }
+                }
+            } else {
+                if (triang_zero) {
+                    n_rots = ((block_size - 1) * block_size) / 2;
+                } else {
+                    n_rots = block_size * block_size;
                 }
             }
             // Send/receive rotations
             MPI_Request req_bcast;
-            MPI_Ibcast(rotations, 2 * n_rots, MPI_DOUBLE, sender_id, comm, &req_bcast);
-
+            double *senrecv_rots = proc_id == sender_id ? cur_rots : out_rotations;
+            MPI_Ibcast(senrecv_rots, 2 * n_rots, MPI_DOUBLE, sender_id, comm, &req_bcast);
+            //MPI_Bcast(senrecv_rots, 2 * n_rots, MPI_DOUBLE, sender_id, comm);
+                
             // Perform rotations to other blocks in row
             double *up_other_blocks = main_block;
             double *dn_other_blocks = cur_block;
@@ -118,7 +129,7 @@ int main(int argc, char *argv[]) {
                 MPI_Status status;
                 MPI_Wait(&req_bcast, &status);
             }
-
+    
 #pragma omp parallel for
             for (int subbl_id = 0; subbl_id < n_subblocks; ++subbl_id) {
                 double *up_subblock = up_other_blocks + block_size * subblock_size * subbl_id;
@@ -126,31 +137,27 @@ int main(int argc, char *argv[]) {
                 int up_off{0};
                 int dn_off = triang_zero ? up_off + 1 : 0;
                 for (int i = 0; i < n_rots; ++i) {
-                    if (proc_id == 0) {
-                        //std::cout << "Rotate: " << up_off << ",  " << dn_off << std::endl;
-                    }
-                    drot(subblock_size, up_subblock + up_off, block_size, dn_subblock + dn_off, block_size,
-                         rotations[2 * i], rotations[2 * i + 1]);
+                    drot(subblock_size, up_subblock + up_off, block_size, dn_subblock + dn_off, 
+                            block_size, senrecv_rots[2 * i], senrecv_rots[2 * i + 1]);
                     ++dn_off;
                     if (dn_off % block_size == 0) {
-                        up_off += block_size + 1;
-                        if (triang_zero) {
-                            dn_off = up_off + 1;
-                        }
+                        ++up_off;
+                        dn_off = triang_zero ? up_off + 1 : 0;
                     }
-                }
+                }   
             }
-//            if (proc_id == sender_id) { // Current block has already been rotated
-//                MPI_Status status;
-//                MPI_Wait(&req_bcast, &status);
-//            }
-            rotations += 2 * n_rots;
-
+            if (proc_id == sender_id) { // Current block has already been rotated
+                MPI_Status status;
+                MPI_Wait(&req_bcast, &status);
+                cur_rots += 2 * n_rots;
+            }
         }
     }
-    std::cout << nnz << std::endl;
 
-    delete[] full_rotations;
+    //std::cout << "id = " << proc_id << ", blocks = \n";
+    //print_matrix(block_size, n_block_cols * n_block_rows * block_size, blocks);
+    delete[] my_rotations;
+    delete[] out_rotations;
     delete[] blocks;
 
     MPI_Finalize();
