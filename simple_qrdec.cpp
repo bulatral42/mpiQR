@@ -3,18 +3,12 @@
 
 
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        std::cout << "Usage: ./binary N" << std::endl;
-        return -1;
+
+    std::vector<int> Ns{2048, 4096, 8192, 16384, 32768, 65536};
+
+    for (int N : Ns) {
+        simple_qrdec(N);
     }
-
-    std::istringstream sN(argv[1]);
-    int N{0}; // Full matrix size
-    sN >> N;
-
-    std::cout << "N = " << N <<  std::endl;
-
-    simple_qrdec(N);
     return 0;
 }
 
