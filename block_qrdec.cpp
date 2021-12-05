@@ -1,13 +1,7 @@
 #include <mpi.h>
 #include <iostream>
-#include <cmath>
-#include <random>
-#include "BLAS.h"
-#include "LAPACK.h"
 
-#include <unistd.h>
-
-#include "block_qrdec.hpp"
+#include "qrdec.hpp"
 
 
 void print_matrix(int M, int N, double *A) {
