@@ -4,11 +4,14 @@
 
 int main(int argc, char *argv[]) {
 
-    std::vector<int> Ns{2048, 4096, 8192, 16384, 32768, 65536};
+    MPI_Init(&argc, &argv);
+
+    std::vector<int> Ns{256, 512, 1024};
 
     for (int N : Ns) {
         simple_qrdec(N);
     }
+    MPI_Finalize();
     return 0;
 }
 

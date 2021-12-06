@@ -1,0 +1,72 @@
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 512, k = 128, m = 16, nbc = 2, nbr = 4
+Test #1
+MPI QR time = 0.0509233 sec
+Test #2
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 512, k = 128, m = 16, nbc = 2, nbr = 4
+MPI QR time = 0.0436032 sec
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 512, k = 128, m = 16, nbc = 2, nbr = 4
+Test #3
+MPI QR time = 0.0432863 sec
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+Test #1
+N = 1024, k = 128, m = 16, nbc = 4, nbr = 8
+MPI QR time = 0.224498 sec
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 1024, k = 128, m = 16, nbc = 4, nbr = 8
+Test #2
+MPI QR time = 0.222948 sec
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 1024, k = 128, m = 16, nbc = 4, nbr = 8
+Test #3
+MPI QR time = 0.221707 sec
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 2048, k = 128, m = 16, nbc = 8, nbr = 16
+Test #1
+MPI QR time = 1.37012 sec
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 2048, k = 128, m = 16, nbc = 8, nbr = 16
+Test #2
+MPI QR time = 1.37446 sec
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 2048, k = 128, m = 16, nbc = 8, nbr = 16
+Test #3
+MPI QR time = 1.37015 sec
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 4096, k = 128, m = 16, nbc = 16, nbr = 32
+Test #1
+MPI QR time = 9.5138 sec
+Test #2
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 4096, k = 128, m = 16, nbc = 16, nbr = 32
+MPI QR time = 9.49663 sec
+Test #3
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 4096, k = 128, m = 16, nbc = 16, nbr = 32
+MPI QR time = 9.5037 sec
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 8192, k = 128, m = 16, nbc = 32, nbr = 64
+Test #1
+MPI QR time = 90.8035 sec
+Test #2
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 8192, k = 128, m = 16, nbc = 32, nbr = 64
+MPI QR time = 104.149 sec
+Test #3
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 8192, k = 128, m = 16, nbc = 32, nbr = 64
+MPI QR time = 105.014 sec
+Test #1
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 16384, k = 128, m = 16, nbc = 64, nbr = 128
+MPI QR time = 814.882 sec
+Test #2
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 16384, k = 128, m = 16, nbc = 64, nbr = 128
+MPI QR time = 820.704 sec
+Test #3
+Start mpi-omp-QR, n_proc = 2, n_thr = 1
+N = 16384, k = 128, m = 16, nbc = 64, nbr = 128
+MPI QR time = 785.947 sec
