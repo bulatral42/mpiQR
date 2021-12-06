@@ -1,0 +1,45 @@
+Start simple-QR
+N = 256
+Simple QR time = 0.0356969 sec
+Start simple-QR
+N = 256
+Simple QR time = 0.0375416 sec
+Start simple-QR
+N = 256
+Simple QR time = 0.0472308 sec
+Start simple-QR
+N = 512
+Simple QR time = 0.323602 sec
+Start simple-QR
+N = 512
+Simple QR time = 0.327747 sec
+Start simple-QR
+N = 512
+Simple QR time = 0.378344 sec
+Start simple-QR
+N = 1024
+Simple QR time = 2.67301 sec
+Start simple-QR
+N = 1024
+Simple QR time = 2.6835 sec
+Start simple-QR
+N = 1024
+Simple QR time = 3.11337 sec
+Start simple-QR
+N = 2048
+Simple QR time = 29.3816 sec
+Start simple-QR
+N = 2048
+Simple QR time = 29.9133 sec
+Start simple-QR
+N = 2048
+Simple QR time = 30.2264 sec
+Start simple-QR
+N = 4096
+Simple QR time = 486.829 sec
+Start simple-QR
+N = 4096
+Simple QR time = 493.528 sec
+Start simple-QR
+N = 4096
+Simple QR time = 514.944 sec
