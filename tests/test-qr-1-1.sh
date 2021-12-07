@@ -2,7 +2,7 @@
 
 
 #SBATCH --job-name=qr-rot-1-1
-#SBATCH --output=./results/log_qr_1-1.txt
+#SBATCH --output=./results/log_qr_seq-1-1.txt
 #SBATCH --partition=x20core
 #SBATCH --time=01:00:00
 #SBATCH --nodes=1
